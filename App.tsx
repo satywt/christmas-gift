@@ -1,14 +1,15 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Scene from './components/Scene';
 import { useOrientation } from './hooks/useOrientation';
 import { GameState } from './types';
 
-const GIFT_DELAY_MS = 5000;
+const GIFT_DELAY_MS = 6000; // 调整为 6 秒，让用户先欣赏 3D 星尘树
 
-// Physics constants for the rotation
-const FRICTION = 0.96; // Slows down the rotation over time (0 to 1)
-const ACCEL_FACTOR = 0.0015; // How much tilt affects speed
-const MAX_VELOCITY = 0.15; // Limit maximum spin speed
+// Physics constants for the rotation - Optimized for a "heavier", smoother feel
+const FRICTION = 0.92; 
+const ACCEL_FACTOR = 0.0006; 
+const MAX_VELOCITY = 0.06; 
 
 const ScatteredLetters = ({ text, className }: { text: string; className?: string }) => {
   const letters = useMemo(() => {
@@ -114,14 +115,21 @@ export default function App() {
             onGiftClick={handleGiftClick} 
           />
           
-          {/* Static Bottom Text */}
+          {/* Static Bottom Text Container */}
           <div className="absolute bottom-12 left-0 right-0 flex flex-col items-center pointer-events-none animate-fade-in-slow">
+            
+            {/* UI Overlay: Hint */}
+            {gameState === GameState.GIFT_APPEARED && (
+              <div className="mb-8 animate-bounce">
+                <p className="text-gray-400 text-[11px] tracking-[0.2em] font-light">
+                  快看，树上有什么！
+                </p>
+              </div>
+            )}
+
             <h1 className="font-festive text-3xl sm:text-5xl text-red-600/70 mb-1">
               Merry Christmas
             </h1>
-            <p className="text-gray-300 text-[10px] tracking-[0.3em] font-light">
-              2025.12.25
-            </p>
           </div>
         </>
       )}
@@ -130,7 +138,6 @@ export default function App() {
       {gameState === GameState.WAITING_PERMISSION && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/98 backdrop-blur-sm p-6 text-center overflow-hidden">
           <div className="font-festive text-red-600/90 mb-12 select-none pointer-events-none w-full animate-seq-1 opacity-0">
-             {/* Balanced "Merry" and "Christmas" sizes to ensure display on mobile */}
              <div className="text-3xl sm:text-6xl leading-tight whitespace-nowrap">
                <ScatteredLetters text="Merry" />
              </div>
@@ -153,15 +160,6 @@ export default function App() {
           </div>
           <p className="mt-10 text-[9px] text-gray-300 opacity-0 relative z-10 animate-seq-4 uppercase tracking-tighter">
             *需要访问重力感应权限
-          </p>
-        </div>
-      )}
-
-      {/* UI Overlay: Hint */}
-      {gameState === GameState.GIFT_APPEARED && (
-        <div className="absolute top-28 left-0 right-0 text-center pointer-events-none animate-bounce">
-          <p className="text-gray-300 text-[10px] tracking-widest font-light uppercase">
-            Look closer at the tree
           </p>
         </div>
       )}

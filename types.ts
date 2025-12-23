@@ -5,7 +5,8 @@ export enum ShapeType {
   LINE = 'LINE',
   STAR = 'STAR',
   GIFT = 'GIFT',
-  BOKEH = 'BOKEH' // Added for the new blurry style
+  BOKEH = 'BOKEH',
+  TWINKLE = 'TWINKLE' // 外层闪烁小光点
 }
 
 export interface Point3D {
