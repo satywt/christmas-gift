@@ -1,7 +1,13 @@
-
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { GameState, ShapeType, TreeElement } from '../types';
+import { GameState, ShapeType, TreeElement, Point3D } from '../types';
 import { generateTree, project } from '../utils/math';
+
+interface ProjectedElement extends TreeElement {
+  x: number;
+  y: number;
+  z: number;
+  scale: number;
+}
 
 interface SceneProps {
   gameState: GameState;
@@ -15,13 +21,12 @@ const Scene: React.FC<SceneProps> = ({ gameState, rotationY, onGiftClick }) => {
   const requestRef = useRef<number>(0);
   
   useEffect(() => {
-    // Increased count from 220 to 450 to compensate for smaller dots
     const tree = generateTree(450); 
     setElements(tree);
     elementsRef.current = tree;
   }, []);
 
-  const giftPosition = useMemo(() => {
+  const giftPosition = useMemo<Point3D>(() => {
     const y = 30 + Math.random() * 70; 
     const maxRadius = ((y + 180) / 300) * 115;
     const angle = Math.PI / 2 + Math.random() * Math.PI;
@@ -68,19 +73,18 @@ const Scene: React.FC<SceneProps> = ({ gameState, rotationY, onGiftClick }) => {
   const centerY = dimensions.height / 2 - 30; 
   const scale = Math.min(dimensions.width, dimensions.height) / 450;
 
-  const renderedElements = useMemo(() => {
-    const projected = elements.map(el => {
+  const renderedElements = useMemo<ProjectedElement[]>(() => {
+    const projected: ProjectedElement[] = elements.map(el => {
       const proj = project(el.position, rotationY, { x: centerX, y: centerY }, scale);
       return { ...el, ...proj };
     });
 
     if (gameState === GameState.GIFT_APPEARED) {
-      const giftPos3D = { x: giftPosition.x, y: giftPosition.y, z: giftPosition.z };
-      const giftProj = project(giftPos3D, rotationY, { x: centerX, y: centerY }, scale);
+      const giftProj = project(giftPosition, rotationY, { x: centerX, y: centerY }, scale);
       projected.push({
         id: 'THE_GIFT',
         type: ShapeType.GIFT,
-        position: giftPos3D,
+        position: giftPosition,
         scale: 1,
         color: '',
         rotationOffset: 0,
