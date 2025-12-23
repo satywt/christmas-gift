@@ -85,7 +85,7 @@ const Scene: React.FC<SceneProps> = ({ gameState, rotationY, onGiftClick }) => {
         id: 'THE_GIFT',
         type: ShapeType.GIFT,
         position: giftPosition,
-        scale: 1,
+        // 移除重复的 scale: 1，使用 giftProj 提供的缩放比例
         color: '',
         rotationOffset: 0,
         ...giftProj
