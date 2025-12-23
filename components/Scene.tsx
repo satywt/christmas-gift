@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { GameState, ShapeType, TreeElement, Point3D } from '../types';
 import { generateTree, project } from '../utils/math';
@@ -21,7 +22,8 @@ const Scene: React.FC<SceneProps> = ({ gameState, rotationY, onGiftClick }) => {
   const requestRef = useRef<number>(0);
   
   useEffect(() => {
-    const tree = generateTree(450); 
+    // 降低总数至 280 以适配手机性能
+    const tree = generateTree(280); 
     setElements(tree);
     elementsRef.current = tree;
   }, []);
@@ -70,46 +72,46 @@ const Scene: React.FC<SceneProps> = ({ gameState, rotationY, onGiftClick }) => {
   }, [gameState]);
 
   const centerX = dimensions.width / 2;
-  const centerY = dimensions.height / 2 - 30; 
-  const scale = Math.min(dimensions.width, dimensions.height) / 450;
+  const centerY = dimensions.height / 2 - 20; 
+  const baseScale = Math.min(dimensions.width, dimensions.height) / 450;
 
   const renderedElements = useMemo<ProjectedElement[]>(() => {
-    const projected: ProjectedElement[] = elements.map(el => {
-      const proj = project(el.position, rotationY, { x: centerX, y: centerY }, scale);
-      return { ...el, ...proj };
-    });
+    // 预分配数组以提高性能
+    const projected: ProjectedElement[] = new Array(elements.length + (gameState === GameState.GIFT_APPEARED ? 1 : 0));
+    
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+      const proj = project(el.position, rotationY, { x: centerX, y: centerY }, baseScale);
+      projected[i] = { ...el, ...proj };
+    }
 
     if (gameState === GameState.GIFT_APPEARED) {
-      const giftProj = project(giftPosition, rotationY, { x: centerX, y: centerY }, scale);
-      projected.push({
+      const giftProj = project(giftPosition, rotationY, { x: centerX, y: centerY }, baseScale);
+      projected[elements.length] = {
         id: 'THE_GIFT',
         type: ShapeType.GIFT,
         position: giftPosition,
-        // 移除重复的 scale: 1，使用 giftProj 提供的缩放比例
         color: '',
         rotationOffset: 0,
         ...giftProj
-      });
+      };
     }
+    
+    // Z-index 排序在手机上必不可少，但数量减少后开销可接受
     return projected.sort((a, b) => a.z - b.z);
-  }, [elements, rotationY, centerX, centerY, scale, gameState, giftPosition]);
+  }, [elements, rotationY, centerX, centerY, baseScale, gameState, giftPosition]);
 
   return (
     <svg 
       width="100%" 
       height="100%" 
       className="absolute top-0 left-0 overflow-visible animate-fade-in"
-      style={{ pointerEvents: 'none' }}
+      style={{ pointerEvents: 'none', willChange: 'transform' }}
+      shapeRendering="optimizeSpeed"
     >
-      <defs>
-        <filter id="bokehBlur" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
-      </defs>
-
+      {/* 移除 CSS Filter 提高渲染效率 */}
       {renderedElements.map((el) => {
-        if (el.scale < 0 || el.scale > 5) return null;
+        if (!el || el.scale < 0 || el.scale > 5) return null;
 
         const size = 18 * el.scale;
 
@@ -128,14 +130,14 @@ const Scene: React.FC<SceneProps> = ({ gameState, rotationY, onGiftClick }) => {
 
         if (el.type === ShapeType.BOKEH) {
           return (
-            <g 
+            <circle 
               key={el.id} 
-              transform={`translate(${el.x}, ${el.y})`}
-              opacity={el.opacity}
-              filter="url(#bokehBlur)"
-            >
-              <circle r={size} fill={el.color} />
-            </g>
+              cx={el.x}
+              cy={el.y}
+              r={size} 
+              fill={el.color} 
+              fillOpacity={el.opacity}
+            />
           );
         }
 
@@ -148,7 +150,7 @@ const Scene: React.FC<SceneProps> = ({ gameState, rotationY, onGiftClick }) => {
               width={size/8} 
               height={size/2} 
               fill={el.color}
-              opacity={0.4}
+              fillOpacity={0.3}
             />
           );
         }
